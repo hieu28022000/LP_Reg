@@ -1,6 +1,6 @@
 CRAFT:
   TRAINED_MODEL: 'models/craft_mlt_25k.pth'
-  TEXT_THRESHOLD: 0.7
+  TEXT_THRESHOLD: 0.4
   LOW_TEST: 0.4
   LINK_THRESHOLD: 0.4
   CUDA: False

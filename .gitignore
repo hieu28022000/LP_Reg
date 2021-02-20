@@ -147,3 +147,4 @@ result/
 TPS-ResNet-BiLSTM-Attn.pth
 moran_model.pth
 craft_mlt_25k.pth
+data/
