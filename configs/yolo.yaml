@@ -1,4 +1,4 @@
-YOLO:
+YOLOV4:
   YOLO_MODEL_PATH: 'yolo/yolov3_last.weights'
   YOLO_CFG_PATH: 'yolo/yolov3.cfg'
   CLASS_PATH: 'yolo/obj.names'

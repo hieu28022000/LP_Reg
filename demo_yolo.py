@@ -1,16 +1,14 @@
 import cv2
 import numpy as np
-import os
 from utils import get_config
 
 
 cfg = get_config()
-cfg.merge_from_file('configs/yolov4.yaml')
+cfg.merge_from_file('configs/yolo.yaml')
 
-net = cv2.dnn.readNet(cfg.YOLO.YOLO_MODEL_PATH, cfg.YOLO.YOLO_CFG_PATH)
-output_path = os.path.join("results", "out_img.jpg")
+net = cv2.dnn.readNet(cfg.YOLOV4.YOLO_MODEL_PATH, cfg.YOLOV4.YOLO_CFG_PATH)
 # Name custom object;
-classesFile = cfg.YOLO.CLASS_PATH;
+classesFile = cfg.YOLOV4.CLASS_PATH;
 
 classes = None
 with open(classesFile, 'rt') as f:
@@ -67,8 +65,9 @@ def detect(img, net, output_layers):
     return img, class_ids, boxes
 
 
-# detect(frame, net, output_layers)
 
+if __name__ == '__main__':
+    detect(frame, net, output_layers)
 
 
 
