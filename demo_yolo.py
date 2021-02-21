@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from utils import get_config
 
 
 cfg = get_config()
