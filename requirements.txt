@@ -23,6 +23,6 @@ six==1.15.0
 sklearn==0.0
 threadpoolctl==2.1.0
 toolz==0.11.1
-torch==1.5.0
+torch==1.5z.0
 torchvision==0.6.0
 typing-extensions==3.7.4.3
