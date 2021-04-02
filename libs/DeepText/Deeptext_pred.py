@@ -11,12 +11,10 @@ from libs.DeepText.dataset import RawDataset, AlignCollate
 from libs.DeepText.model import Model
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-
-def Deeptext_predict(model_path, image_path):
+def load_model_Deeptext(model_path):
     sensitive = False
     Prediction = 'Attn'
     character = '0123456789abcdefghijklmnopqrstuvwxyz'
-    image_folder = image_path
     saved_model = model_path
     if sensitive:
         character = string.printable[:-6]
@@ -32,6 +30,28 @@ def Deeptext_predict(model_path, image_path):
 
     # load model
     model.load_state_dict(torch.load(saved_model, map_location=device))
+    return model, Prediction, converter
+
+def Deeptext_predict(image_path, model, Prediction, converter):
+    # sensitive = False
+    # Prediction = 'Attn'
+    # character = '0123456789abcdefghijklmnopqrstuvwxyz'
+    image_folder = image_path
+    # saved_model = model_path
+    # if sensitive:
+    #     character = string.printable[:-6]
+    # """ model configuration """
+    # if 'CTC' in Prediction:
+    #     converter = CTCLabelConverter(character)
+    # else:
+    #     converter = AttnLabelConverter(character)
+    #     num_class = len(converter.character)
+
+    # model = Model(num_class)
+    # model = torch.nn.DataParallel(model).to(device)
+
+    # # load model
+    # model.load_state_dict(torch.load(saved_model, map_location=device))
 
     # prepare data. two demo images from https://github.com/bgshih/crnn#run-demo
     AlignCollate_demo = AlignCollate(imgH=32, imgW=100, keep_ratio_with_pad=False)
@@ -86,4 +106,6 @@ def Deeptext_predict(model_path, image_path):
 if __name__ == '__main__':
     image_path = './demo_image/illusion.png'
     saved_model = './TPS-ResNet-BiLSTM-Attn.pth'
-    print(Deeptext_predict(saved_model, image_path))
+    model, Prediction, image_folder, converter = load_model_Deeptext(model_path, image_path)
+
+    print(Deeptext_predict(saved_model, image_path, model, Prediction, image_folder, converter))

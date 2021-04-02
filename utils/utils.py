@@ -9,3 +9,11 @@ def loadImage(img_file):
     img = np.array(img)
 
     return img
+
+def tlwh_2_maxmin(bboxes):
+    new_bboxes = []
+    for bbox in bboxes:
+        xmin, ymin, xmax, ymax = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
+        new_bboxes.append([xmin, ymin, xmax, ymax])
+    new_bboxes = np.array(new_bboxes)
+    return new_bboxes

@@ -139,13 +139,12 @@ myEnv/
 # logfile
 logfile/
 
-# detectron2
-detectron2/
+# # detectron2
+# detectron2/
 
 result/
 
 TPS-ResNet-BiLSTM-Attn.pth
-moran_model.pth
-craft_mlt_25k.pth
 data/
 models/
+result_text_detect/

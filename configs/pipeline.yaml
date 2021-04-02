@@ -2,8 +2,8 @@ PIPELINE:
   # text recog
   DEEPTEXT: False
   MORAN: True
-  DEEPTEXT_MODEL_PATH: 'models/TPS-ResNet-BiLSTM-Attn.pth'
-  MORAN_MODEL_PATH: 'models/moran_model.pth'
+  DEEPTEXT_MODEL_PATH: './models/TPS-ResNet-BiLSTM-Attn.pth'
+  MORAN_MODEL_PATH: './models/moran_model.pth'
 
   # text detection
   TRAINED_MODEL: 'models/craft_mlt_25k.pth'
@@ -18,3 +18,7 @@ PIPELINE:
   TEST_FOLDER: './image'
   REFINE: FALSE
   REFINER_MODEL: 'model/craft_refiner_CTW1500.pth'
+
+  # pipeline
+  Y_DIST_FOR_MERGE_BBOX: 5
+  EXPAND_FOR_BBOX: 0

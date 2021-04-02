@@ -5,6 +5,19 @@ import os
 import cv2
 from libs.CRAFT import file_utils
 
+def load_model_Craft(config, net):
+    print('Loading weights CRAFT from checkpoint (' + config.TRAINED_MODEL + ')')
+    if config.CUDA:
+        net.load_state_dict(copyStateDict(torch.load(config.TRAINED_MODEL)))
+    else:
+        net.load_state_dict(copyStateDict(torch.load(config.TRAINED_MODEL, map_location='cpu')))
+
+    if config.CUDA:
+        net = net.cuda()
+        net = torch.nn.DataParallel(net)
+        cudnn.benchmark = False
+    return net
+
 def copyStateDict(state_dict):
     if list(state_dict.keys())[0].startswith("module"):
         start_idx = 1
@@ -17,16 +30,7 @@ def copyStateDict(state_dict):
     return new_state_dict
 
 def craft_text_detect(image, config, net):    
-    print('Loading weights CRAFT from checkpoint (' + config.TRAINED_MODEL + ')')
-    if config.CUDA:
-        net.load_state_dict(copyStateDict(torch.load(config.TRAINED_MODEL)))
-    else:
-        net.load_state_dict(copyStateDict(torch.load(config.TRAINED_MODEL, map_location='cpu')))
 
-    if config.CUDA:
-        net = net.cuda()
-        net = torch.nn.DataParallel(net)
-        cudnn.benchmark = False
 
     net.eval()
 
@@ -57,5 +61,5 @@ def craft_text_detect(image, config, net):
 
     # file_utils.saveResult(image_path, image[:,:,::-1], polys, dirname=result_folder)
 
+    # return img
     return  bboxes, polys, score_text
-
