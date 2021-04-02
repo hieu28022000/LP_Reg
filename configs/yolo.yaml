@@ -1,6 +1,8 @@
 YOLOV4:
-  YOLO_MODEL_PATH: './models/yolov4_LP_darknet53.weights'
-  YOLO_CFG_PATH: './configs/yolov4_LP_darknet53.cfg'
-  CLASS_PATH: './configs/obj.names'
-  INPUT: "DEMO.mp4"
-  OUTPUT: "result"
+<<<<<<< HEAD
+
+=======
+  YOLO_MODEL_PATH: 'yolo/yolov3_last.weights'
+  YOLO_CFG_PATH: 'yolo/yolov3.cfg'
+  CLASS_PATH: 'yolo/obj.names'
+>>>>>>> 24916d59bb0ecc7a111e294185b33c68ef415bff
