@@ -1,3 +1,0 @@
-*.hdf5 filter=lfs diff=lfs merge=lfs -text
-*.ipynb linguist-language=Python
-weights filter=lfs diff=lfs merge=lfs -text
