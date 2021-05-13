@@ -1,7 +1,7 @@
 PIPELINE:
   # text recog
-  DEEPTEXT: False
-  MORAN: True
+  DEEPTEXT: True
+  MORAN: False
   DEEPTEXT_MODEL_PATH: './models/TPS-ResNet-BiLSTM-Attn.pth'
   MORAN_MODEL_PATH: './models/moran_model.pth'
 

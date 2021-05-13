@@ -50,6 +50,8 @@ def sorting_bounding_box(points):
             A = [initial_value_A[1][0]]
             K = list(map(lambda x:[x,abs(x[1]-initial_value_A[1][0][1])],x_y_cordinate))
             K = [[count,i]for count,i in enumerate(K)]
+            print ('--------------------------------------------', K)
+            for i in K: print (i[1][1])
             K = [i for i in K if i[1][1] <= threshold_value]
             sorted_K = list(map(lambda x:[x[0],x[1][0]],sorted(K,key=lambda x:x[1][1])))
             B = []
@@ -84,11 +86,64 @@ def visual(img, coordinates):
     for i, line in enumerate(coordinates):
         for j in line:
         # coordinate.append([line[j][0],line[i][1]])
-            cv2.rectangle(img, (j[0][0], j[0][1]), (j[2][0], j[2][1]), (0,255,0), 1)
-            cv2.putText(img, str(count), (j[0][0], j[0][1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255,0,0), thickness=1)
+            cv2.rectangle(img, (int(j[0][0]), int(j[0][1])), (int(j[2][0]), int(j[2][1])), (0,255,0), 1)
+            cv2.putText(img, str(count), (int (j[0][0]), int(j[0][1])), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255,0,0), thickness=1)
             count += 1    
             
             # cv2.imshow("image", img)
             # cv2.waitKey(0)
     cv2.imwrite('img_Re.jpg', img)
+
+coor = [[[33.333332 ,  6.6666665],
+        [53.333332 ,  6.6666665],
+        [53.333332,  29.333334 ],
+        [33.333332 , 29.333334 ]],
+
+        [[ 8.   ,      8.       ],
+        [29.333334  , 8.       ],
+        [29.333334  ,33.333332 ],
+        [ 8.        ,33.333332 ]],
+
+        [[-1.6105617, 34.561058 ],
+        [59.64356  , 28.435644 ],
+        [62.270626 , 54.70627  ],
+        [ 1.0165049, 60.83168  ]]]
+
+def sort_bb(bboxes):
+    print ('bboxes: ', len (bboxes))
+    lines = []
+    dist = 10
+    # sort with y coor
+    if (len(bboxes) == 2):
+        return bboxes
+    for i in range(len(bboxes)):
+        for j in range(i+1, len(bboxes)):
+            if (abs(bboxes[i][0][1] - bboxes[j][0][1]) < dist):
+                lines.append([bboxes[i], bboxes[j]])
+    if (len(bboxes) % 2 != 0):
+        lines.append([bboxes[len(bboxes) - 1]])
+    sorted_list = []
+    # sort in a line by x coor
+    new_lines = []
+    for i in lines:
+        i = [j for j in sorted(i, key=lambda x:x[0][0])]
+        new_lines.append(i)    
+    for i in new_lines:
+        for j in i:
+            sorted_list.append(j)
+    print ('sorted_list: ', sorted_list)
+    del lines
+    del new_lines
+    return sorted_list
+    # final_list = []
+    # # merge bb in a line
+    # for i in sorted_list:
+    #     if (len(i) > 1):
+    #         print (i)
+    #         final_list.append([i[0][0], i[-1][1], i[-1][2], i[0][3]])
+    #     else:
+    #         final_list.append([i[0][0], i[0][1], i[0][2], i[0][3]])
+    # return final_list               
+    
+sort_bb(coor)
     
