@@ -4,14 +4,14 @@ import time
 
 import numpy as np
 
-from utils import get_config, loadImage, sorting_bounding_box, visual, align_item, tlwh_2_maxmin
+from utils import get_config, loadImage, sorting_bounding_box, visual, align_item, tlwh_2_maxmin, merge_bb, four_point_transform
 
 from libs.CRAFT.craft import CRAFT
 from libs.MORAN.MORAN_pred import MORAN_predict
 from libs.MORAN.models.moran import MORAN
 from libs.DeepText.Deeptext_pred import Deeptext_predict, load_model_Deeptext
-from libs.detectron2.predict_img import predict_img_detectron2
-from libs.detectron2.predict_img import visualize
+#from libs.detectron2.predict_img import predict_img_detectron2
+#from libs.detectron2.predict_img import visualize
 from libs.super_resolution.improve_resolution import improve_resolution
 
 from src import craft_text_detect, load_model_Craft
@@ -70,9 +70,9 @@ def text_recog(cfg, image_path, model, Prediction, converter):
 def text_detect_CRAFT(img, craft_config, CRAFT_MODEL, Y_DIST_FOR_MERGE_BBOX, EXPAND_FOR_BBOX, sortbb=True, visual_img=False):
     # img = loadImage(image_path)
     bboxes, polys, score_text = craft_text_detect(img, craft_config, CRAFT_MODEL)
-
     if sortbb:
-        polys = sorting_bounding_box(polys)
+        bboxes = sorting_bounding_box(bboxes)
+        bboxes = merge_bb(bboxes)
     if visual_img:
         img = visual(img, polys)
     # bboxes = merge_bbox_in_line(bboxes, Y_DIST_FOR_MERGE_BBOX, EXPAND_FOR_BBOX)
@@ -96,7 +96,7 @@ def LP_detect_yolo(img, cfg, YOLO_NET):
 
 
 
-def LP_regconition(cfg, img, YOLO_NET):
+def LP_regconition(cfg, img, YOLO_NET, img_path):
     
     # detect License plates in image    
     detected_LP = LP_detect_yolo(img, cfg, YOLO_NET)
@@ -109,27 +109,33 @@ def LP_regconition(cfg, img, YOLO_NET):
         # predict region of text bounding box
         bboxes, polys, score_text = text_detect_CRAFT(new_img, CRAFT_CONFIG, CRAFT_MODEL, PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX,  PIPELINE_CFG.EXPAND_FOR_BBOX)
         LP_reg = []
-    
+
         for index, bbox in enumerate(bboxes):
             # merge bbox on a line
-            try: 
-                if np.abs(bboxes[index][2][1] - bboxes[index-1][2][1]) < PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX:
-                        bboxes[index][0], bboxes[index][1], bboxes[index][2], bboxes[index][3] = bboxes[index-1][0] - PIPELINE_CFG.EXPAND_FOR_BBOX, bboxes[index][1] - PIPELINE_CFG.EXPAND_FOR_BBOX, bboxes[index][2] + PIPELINE_CFG.EXPAND_FOR_BBOX, bboxes[index-1][3] + PIPELINE_CFG.EXPAND_FOR_BBOX
-                        del_pos = index - 1
-                        bboxes = np.delete(bboxes, del_pos, axis=0)
-            except: pass
-            
             img_reg = new_img[int(bbox[0][1]):int(bbox[2][1]), int(bbox[0][0]):int(bbox[2][0])]
             img_reg = improve_resolution(img_reg)
             cv2.imwrite('./reg/img_reg.jpg', img_reg)
             text = text_recog (cfg, './reg/img_reg.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
             LP_reg.append(text)
-            cv2.rectangle(img, (bbox[0][0], bbox[0][1]), (bbox[2][0], bbox[2][1]), (0,255,0), 1)
+            # cv2.rectangle(new_img, (bbox[0][0], bbox[0][1]), (bbox[2][0], bbox[2][1]), (0,255,0), 1)
             # cv2.putText(new_img, str(count), (bbox[0][0], bbox[0][1]), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255,0,0), thickness=1)
         LP_reg_text = ''.join(LP_reg)
         LP_reg_text = LP_reg_text.upper()
+        write_predict(LP_reg_text, '1', int(i[0]), int(i[1]), int(i[2]), int(i[3]) , img_path)
         cv2.putText(img, str(LP_reg_text), (int(i[0]), int(i[1])), cv2.FONT_HERSHEY_SIMPLEX, fontScale=3, color=(255,255,0), thickness=3)
     return img
+    
+
+def write_predict(name, confidence, xmin, ymin, xmax, ymax, img_path):
+    save = './result_reg'
+    img_path = img_path.split('/')[-1]
+    img_path = img_path.replace('.jpg', '.txt')
+    path_save = os.path.join(save, img_path)
+    print (path_save)
+    f = open(path_save, 'w+')
+    print(name, confidence, xmin, ymin, xmax, ymax, img_path)
+    f.write('{} {} {} {} {} {} {}'.format(name, str(confidence), str(xmin), str(ymin), str(xmax), str(ymax), '\n'))
+    f.close()
 
 if __name__ == '__main__':
     # start = time.time()
@@ -145,13 +151,21 @@ if __name__ == '__main__':
     #     for i in bboxes:
     #         cv2.rectangle(img, (int (i[0][0]), int(i[0][1])), (int (i[2][0]), int(i[2][1])), (0,255,255), 1)
     #     cv2.imwrite(path_save, img)
+    
+    source = './data'
+    for i in os.listdir(source):
+        img_path = os.path.join(source, i)
+        img = cv2.imread(img_path)
+        img = LP_regconition(cfg, img, YOLO_NET, img_path)
+        cv2.imwrite(os.path.join('result', i), img)
 
-    img = cv2.imread('./data/LP_8543.jpg')
-    img = LP_regconition(cfg, img, YOLO_NET)
-    cv2.imwrite('./result/result_yolo.jpg', img)
-
-    # img = cv2.imread('data/check.png')
+    #
     # bboxes, polys, score_text = text_detect_CRAFT(img, CRAFT_CONFIG, NET_CRAFT, PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX,  PIPELINE_CFG.EXPAND_FOR_BBOX)
+    # print ('bboxes: ', bboxes)
+    # for i in bboxes:
+    #     image = four_point_transform(img, np.array(i))
+    #     cv2.imshow('image', image)
+    #     cv2.waitKey(0)
     # for i in bboxes:
     #     cv2.rectangle(img, (int (i[0][0]), int(i[0][1])), (int (i[2][0]), int(i[2][1])), (255,0,0), 2)
     # cv2.imwrite('Khang.jpg', img)
