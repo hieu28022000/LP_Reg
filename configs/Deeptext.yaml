@@ -2,7 +2,7 @@ DEEPTEXT:
   # image_folder: 'demo_image/avc.png'
   workers: 4
   batch_size: 192
-  saved_model: 'models/TPS-ResNet-BiLSTM-Attn.pth'
+  saved_model: 'models/deeptext.pth'
   batch_max_length: 25
   imgH: 32
   imgW: 100
@@ -13,7 +13,7 @@ DEEPTEXT:
   Transformation: 'TPS'
   FeatureExtraction: 'ResNet'
   SequenceModeling: 'BiLSTM'
-  Prediction: 'Attn'
+  Prediction: 'CTC'
   num_fiducial: 20
   input_channel: 1
   output_channel: 512

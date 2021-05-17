@@ -19,11 +19,11 @@ def load_model_Deeptext(opt):
         converter = CTCLabelConverter(opt.character)
     else:
         converter = AttnLabelConverter(opt.character)
-    num_class = len(converter.character)
+    opt.num_class = len(converter.character)
 
     if opt.rgb:
         opt.input_channel = 3
-    model = Model(num_class)
+    model = Model(opt)
     model = torch.nn.DataParallel(model).to(device)
 
     # load model

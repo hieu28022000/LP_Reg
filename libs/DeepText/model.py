@@ -24,51 +24,45 @@ from libs.DeepText.modules.prediction import Attention
 
 class Model(nn.Module):
 
-    def __init__(self, num_class):
-        Transformation = 'TPS'
-        FeatureExtraction = 'ResNet'
-        SequenceModeling = 'BiLSTM'
-        Prediction = 'Attn'
-
+    def __init__(self, opt):
         super(Model, self).__init__()
-        # self.opt = opt
-        self.stages = {'Trans': Transformation, 'Feat': FeatureExtraction,
-                       'Seq': SequenceModeling, 'Pred': Prediction}
-
+        self.opt = opt
+        self.stages = {'Trans': opt.Transformation, 'Feat': opt.FeatureExtraction,
+                       'Seq': opt.SequenceModeling, 'Pred': opt.Prediction}
         """ Transformation """
-        if Transformation == 'TPS':
+        if opt.Transformation == 'TPS':
             self.Transformation = TPS_SpatialTransformerNetwork(
-                F=20, I_size=(32, 100), I_r_size=(32, 100), I_channel_num=1)
+                F=opt.num_fiducial, I_size=(opt.imgH, opt.imgW), I_r_size=(opt.imgH, opt.imgW), I_channel_num=opt.input_channel)
         else:
             print('No Transformation module specified')
 
         """ FeatureExtraction """
-        if FeatureExtraction == 'VGG':
-            self.FeatureExtraction = VGG_FeatureExtractor(1, 512)
-        elif FeatureExtraction == 'RCNN':
-            self.FeatureExtraction = RCNN_FeatureExtractor(1, 512)
-        elif FeatureExtraction == 'ResNet':
-            self.FeatureExtraction = ResNet_FeatureExtractor(1, 512)
+        if opt.FeatureExtraction == 'VGG':
+            self.FeatureExtraction = VGG_FeatureExtractor(opt.input_channel, opt.output_channel)
+        elif opt.FeatureExtraction == 'RCNN':
+            self.FeatureExtraction = RCNN_FeatureExtractor(opt.input_channel, opt.output_channel)
+        elif opt.FeatureExtraction == 'ResNet':
+            self.FeatureExtraction = ResNet_FeatureExtractor(opt.input_channel, opt.output_channel)
         else:
             raise Exception('No FeatureExtraction module specified')
-        self.FeatureExtraction_output = 512  # int(imgH/16-1) * 512
+        self.FeatureExtraction_output = opt.output_channel  # int(imgH/16-1) * 512
         self.AdaptiveAvgPool = nn.AdaptiveAvgPool2d((None, 1))  # Transform final (imgH/16-1) -> 1
 
         """ Sequence modeling"""
-        if SequenceModeling == 'BiLSTM':
+        if opt.SequenceModeling == 'BiLSTM':
             self.SequenceModeling = nn.Sequential(
-                BidirectionalLSTM(self.FeatureExtraction_output, 256, 256),
-                BidirectionalLSTM(256, 256, 256))
-            self.SequenceModeling_output = 256
+                BidirectionalLSTM(self.FeatureExtraction_output, opt.hidden_size, opt.hidden_size),
+                BidirectionalLSTM(opt.hidden_size, opt.hidden_size, opt.hidden_size))
+            self.SequenceModeling_output = opt.hidden_size
         else:
             print('No SequenceModeling module specified')
             self.SequenceModeling_output = self.FeatureExtraction_output
 
         """ Prediction """
-        if Prediction == 'CTC':
-            self.Prediction = nn.Linear(self.SequenceModeling_output, num_class)
-        elif Prediction == 'Attn':
-            self.Prediction = Attention(self.SequenceModeling_output, 256, num_class)
+        if opt.Prediction == 'CTC':
+            self.Prediction = nn.Linear(self.SequenceModeling_output, opt.num_class)
+        elif opt.Prediction == 'Attn':
+            self.Prediction = Attention(self.SequenceModeling_output, opt.hidden_size, opt.num_class)
         else:
             raise Exception('Prediction is neither CTC or Attn')
 
@@ -92,6 +86,6 @@ class Model(nn.Module):
         if self.stages['Pred'] == 'CTC':
             prediction = self.Prediction(contextual_feature.contiguous())
         else:
-            prediction = self.Prediction(contextual_feature.contiguous(), text, is_train, batch_max_length=25)
+            prediction = self.Prediction(contextual_feature.contiguous(), text, is_train, batch_max_length=self.opt.batch_max_length)
 
         return prediction
