@@ -26,8 +26,9 @@ cfg.merge_from_file('configs/pipeline.yaml')
 cfg.merge_from_file('configs/craft.yaml')
 cfg.merge_from_file('configs/faster.yaml')
 cfg.merge_from_file('configs/yolo.yaml')
+cfg.merge_from_file('configs/Deeptext.yaml')
 
-
+DEEPTEXT_CONFIG = cfg.DEEPTEXT
 CRAFT_CONFIG = cfg.CRAFT
 NET_CRAFT = CRAFT()
 PIPELINE_CFG = cfg.PIPELINE
@@ -43,7 +44,7 @@ CRAFT_MODEL = load_model_Craft(CRAFT_CONFIG, NET_CRAFT)
 print ('[LOADING SUCESS] Text detection model')
 # model regconition
 print ('[LOADING] Text regconition model')
-DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER = load_model_Deeptext(cfg.PIPELINE.DEEPTEXT_MODEL_PATH)
+DEEPTEXT_MODEL, DEEPTEXT_CONVERTER = load_model_Deeptext(DEEPTEXT_CONFIG)
 print ('[LOADING SUCESS] Text regconition model')
 print ('[LOADING] Super resolution model')
 super_resolution_model = RRDN(weights='gans')
@@ -63,12 +64,12 @@ print ('[LOADING SUCESS] Super resolution model')
 #     return bboxes
 
 
-def text_recog(cfg, image_path, model, Prediction, converter):
+def text_recog(cfg, opt, image_path, model, converter):
     text = 'None'
     if cfg.PIPELINE.DEEPTEXT:
         list_image_path = [image_path]
         for img in list_image_path:
-            text = Deeptext_predict(img, model, Prediction, converter)
+            text = Deeptext_predict(img, opt, model, converter)
     elif cfg.PIPELINE.MORAN:
         text = MORAN_predict(cfg.PIPELINE.MORAN_MODEL_PATH, image_path, MORAN)
     return text
@@ -93,12 +94,9 @@ def LP_detect_faster(img, cfg):
     classes = outputs['instances'].pred_classes
     return boxes
 
-
 def LP_detect_yolo(img, cfg, YOLO_NET):
     img, class_ids, boxes = yolo_detect(img, YOLO_NET, cfg)
     return boxes
-
-
 
 def LP_regconition(cfg, img, YOLO_NET, img_path):
     
@@ -127,7 +125,8 @@ def LP_regconition(cfg, img, YOLO_NET, img_path):
             img_reg = new_img[int(bbox[0][1]):int(bbox[2][1]), int(bbox[0][0]):int(bbox[2][0])]
             img_reg = improve_resolution(img_reg, super_resolution_model)
             cv2.imwrite('./reg/img_reg.jpg', img_reg)
-            text = text_recog (cfg, './reg/img_reg.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
+            text = text_recog(cfg, DEEPTEXT_CONFIG, './reg/img_reg.jpg', DEEPTEXT_MODEL, DEEPTEXT_CONVERTER)
+            # text = text_recog (cfg, './reg/img_reg.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
             LP_reg.append(text)
             # cv2.rectangle(new_img, (int(bbox[0][0]), int(bbox[0][1])), (int(bbox[2][0]), int(bbox[2][1])), (0,255,0), 1)
             # cv2.putText(new_img, str(count), (int(bbox[0][0]), int(bbox[0][1])), cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255,0,0), thickness=1)
