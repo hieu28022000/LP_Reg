@@ -1,8 +1,10 @@
-import cv2
 import os 
 import time
 
 import numpy as np
+import torch
+import cv2
+from ISR.models import RDN, RRDN
 
 from utils import get_config, loadImage, sorting_bounding_box, visual, align_item, tlwh_2_maxmin, merge_bb, four_point_transform, sort_bb
 
@@ -16,6 +18,7 @@ from libs.super_resolution.improve_resolution import improve_resolution
 
 from src import craft_text_detect, load_model_Craft
 from src import yolo_detect
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # setup config
 cfg = get_config()
@@ -42,6 +45,9 @@ print ('[LOADING SUCESS] Text detection model')
 print ('[LOADING] Text regconition model')
 DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER = load_model_Deeptext(cfg.PIPELINE.DEEPTEXT_MODEL_PATH)
 print ('[LOADING SUCESS] Text regconition model')
+print ('[LOADING] Super resolution model')
+super_resolution_model = RRDN(weights='gans')
+print ('[LOADING SUCESS] Super resolution model')
 
 
 # def merge_bbox_in_line (bboxes, Y_DIST_FOR_MERGE_BBOX, EXPAND_FOR_BBOX):
@@ -101,6 +107,10 @@ def LP_regconition(cfg, img, YOLO_NET, img_path):
     for i in detected_LP:
         # store the license plate in image to new_img variable
         print ("detected license plates: ", i)
+        if i[0] < 0: i[0] = 0
+        if i[1] < 0: i[1] = 0
+        if i[2] < 0: i[2] = 0
+        if i[3] < 0: i[3] = 0
         new_img = img[int(i[1]):int(i[3]), int(i[0]):int(i[2])]
         cv2.imwrite('./result/LP.jpg', new_img)
 
@@ -110,13 +120,12 @@ def LP_regconition(cfg, img, YOLO_NET, img_path):
         # count = 1
         for index, bbox in enumerate(bboxes):
             # merge bbox on a line
-            print ("bbox:", bbox)
             if bbox[0][0] < 0: bbox[0][0] = 0
             if bbox[0][1] < 0: bbox[0][1] = 0
             if bbox[1][0] < 0: bbox[1][0] = 0
             if bbox[1][1] < 0: bbox[1][1] = 0
             img_reg = new_img[int(bbox[0][1]):int(bbox[2][1]), int(bbox[0][0]):int(bbox[2][0])]
-            img_reg = improve_resolution(img_reg)
+            img_reg = improve_resolution(img_reg, super_resolution_model)
             cv2.imwrite('./reg/img_reg.jpg', img_reg)
             text = text_recog (cfg, './reg/img_reg.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
             LP_reg.append(text)
@@ -157,7 +166,7 @@ if __name__ == '__main__':
     #         cv2.rectangle(img, (int (i[0][0]), int(i[0][1])), (int (i[2][0]), int(i[2][1])), (0,255,255), 1)
     #     cv2.imwrite(path_save, img)
     
-    source = './data'
+    source = './evaluate_khang'
     for i in os.listdir(source):
         if (i.endswith('.jpg')):
             print (i)
@@ -180,3 +189,6 @@ if __name__ == '__main__':
     # cv2.imwrite('Khang.jpg', img)
     # cv2.imshow('image', img)
     # cv2.waitKey(0)
+
+#    text = text_recog (cfg, './result/LP.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
+

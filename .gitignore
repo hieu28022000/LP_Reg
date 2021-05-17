@@ -148,3 +148,4 @@ TPS-ResNet-BiLSTM-Attn.pth
 data/
 models/
 result_text_detect/
+*.zip

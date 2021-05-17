@@ -2,7 +2,7 @@ PIPELINE:
   # text recog
   DEEPTEXT: True
   MORAN: False
-  DEEPTEXT_MODEL_PATH: './models/TPS-ResNet-BiLSTM-Attn.pth'
+  DEEPTEXT_MODEL_PATH: './models/best_accuracy.pth'
   MORAN_MODEL_PATH: './models/moran_model.pth'
 
   # text detection

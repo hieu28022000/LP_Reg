@@ -131,7 +131,6 @@ def sort_bb(bboxes):
     for i in new_lines:
         for j in i:
             sorted_list.append(j)
-    print ('sorted_list: ', sorted_list)
     del lines
     del new_lines
     return sorted_list
@@ -144,6 +143,3 @@ def sort_bb(bboxes):
     #     else:
     #         final_list.append([i[0][0], i[0][1], i[0][2], i[0][3]])
     # return final_list               
-    
-sort_bb(coor)
-    

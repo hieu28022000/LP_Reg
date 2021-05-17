@@ -4,6 +4,8 @@ from libs.CRAFT.predict import test_net
 import os
 import cv2
 from libs.CRAFT import file_utils
+import torch.backends.cudnn as cudnn
+
 
 def load_model_Craft(config, net):
     print('Loading weights CRAFT from checkpoint (' + config.TRAINED_MODEL + ')')
