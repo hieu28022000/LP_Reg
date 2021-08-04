@@ -1,9 +1,15 @@
+'''
+author: Khang Nguyen Huu
+created: 3/2021
+last modified: 8/4/2021
+'''
 import os 
 import time
 
 import numpy as np
 import torch
 import cv2
+import argparse
 from ISR.models import RDN, RRDN
 
 from utils import get_config, loadImage, sorting_bounding_box, visual, align_item, tlwh_2_maxmin, merge_bb, four_point_transform, sort_bb
@@ -50,20 +56,6 @@ print ('[LOADING] Super resolution model')
 super_resolution_model = RRDN(weights='gans')
 print ('[LOADING SUCESS] Super resolution model')
 
-
-# def merge_bbox_in_line (bboxes, Y_DIST_FOR_MERGE_BBOX, EXPAND_FOR_BBOX):
-#     for index, bbox in enumerate(bboxes):
-#         try: 
-#             if np.abs(bboxes[index][2][1] - bboxes[index-1][2][1]) < Y_DIST_FOR_MERGE_BBOX:
-#                 bboxes[index][0], bboxes[index][1], bboxes[index][2], bboxes[index][3] = bboxes[index-1][0] - EXPAND_FOR_BBOX, bboxes[index][1] - EXPAND_FOR_BBOX, bboxes[index][2] + EXPAND_FOR_BBOX, bboxes[index-1][3] + EXPAND_FOR_BBOX
-#                 print ('befor: ', bboxes)
-#                 del_pos = index - 1
-#                 bboxes = np.delete(bboxes, del_pos, axis=0)
-#             print ('after: ', bboxes)
-#         except: pass
-#     return bboxes
-
-
 def text_recog(cfg, opt, image_path, model, converter):
     text = 'None'
     if cfg.PIPELINE.DEEPTEXT:
@@ -74,7 +66,19 @@ def text_recog(cfg, opt, image_path, model, converter):
         text = MORAN_predict(cfg.PIPELINE.MORAN_MODEL_PATH, image_path, MORAN)
     return text
 
-def text_detect_CRAFT(img, craft_config, CRAFT_MODEL, Y_DIST_FOR_MERGE_BBOX, EXPAND_FOR_BBOX, sortbb=True, visual_img=False):
+def text_detect_CRAFT(img, craft_config, CRAFT_MODEL, sortbb=True, visual_img=False):
+    '''
+    args:
+        img: image
+        craft_config: config of craft
+        CRAFT_MODEL: craft model
+        sort_bb: whether or not sort bounding box
+        visual_image: whether or no not visual image
+    return:
+        bboxes: bbox of text
+        polys: polygon of text
+        score_text: confidence score
+    '''
     # img = loadImage(image_path)
     bboxes, polys, score_text = craft_text_detect(img, craft_config, CRAFT_MODEL)
     if sortbb:
@@ -84,21 +88,28 @@ def text_detect_CRAFT(img, craft_config, CRAFT_MODEL, Y_DIST_FOR_MERGE_BBOX, EXP
 
     return bboxes, polys, score_text
 
-def LP_detect_faster(img, cfg):
-    classes = ['LP']
-    outputs = predict_img_detectron2(cfg.FASTER_RCNN.MODEL, cfg.FASTER_RCNN.CONFIG, cfg.FASTER_RCNN.CONFIDENCE_THRESHOLD, cfg.FASTER_RCNN.NUM_OF_CLASS, img)
-    frame = visualize (outputs, img, classes)
-    cv2.imwrite('frame.jpg', frame)
-    boxes = outputs['instances'].pred_boxes
-    scores = outputs['instances'].scores
-    classes = outputs['instances'].pred_classes
-    return boxes
-
 def LP_detect_yolo(img, cfg, YOLO_NET):
+    '''
+    Localize the license plate in image
+    args:
+        img
+        cfg: yolo config
+        YOLO_NET
+    return:
+        boxes: list of bounding box license plate in image
+    '''
     img, class_ids, boxes = yolo_detect(img, YOLO_NET, cfg)
     return boxes
 
-def LP_regconition(cfg, img, YOLO_NET, img_path):
+def LP_regconition(cfg, img, YOLO_NET):
+    '''
+    main function to do license plate recognition in image, this will loop 
+    over license plate candidates in image and do recognition with each
+    args:
+        cfg: full config
+        img: image to recognition
+        YOLO_NET: model yolo
+    '''
     
     # detect License plates in image    
     detected_LP = LP_detect_yolo(img, cfg, YOLO_NET)
@@ -113,7 +124,7 @@ def LP_regconition(cfg, img, YOLO_NET, img_path):
         cv2.imwrite('./result/LP.jpg', new_img)
 
         # predict region of text bounding box
-        bboxes, polys, score_text = text_detect_CRAFT(new_img, CRAFT_CONFIG, CRAFT_MODEL, PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX,  PIPELINE_CFG.EXPAND_FOR_BBOX)
+        bboxes, polys, score_text = text_detect_CRAFT(new_img, CRAFT_CONFIG, CRAFT_MODEL)
         LP_reg = []
         # count = 1
         for index, bbox in enumerate(bboxes):
@@ -140,6 +151,9 @@ def LP_regconition(cfg, img, YOLO_NET, img_path):
     
 
 def write_predict(name, confidence, xmin, ymin, xmax, ymax, img_path):
+    '''
+    function to write the output of license plate recognition in txt form
+    '''
     save = './result_reg'
     img_path = img_path.split('/')[-1]
     img_path = img_path.replace('.jpg', '.txt')
@@ -150,44 +164,37 @@ def write_predict(name, confidence, xmin, ymin, xmax, ymax, img_path):
     f.write('{} {} {} {} {} {} {}'.format(name, str(confidence), str(xmin), str(ymin), str(xmax), str(ymax), '\n'))
     f.close()
 
-if __name__ == '__main__':
-    # start = time.time()
-    # path = './data/reg_data'
-    # save = './result_text_detect/'
-    # detect_on_image(cfg, path)
-    # for i in os.listdir(path):
-    #     path_save = os.path.join(save, i)
-    #     img_path = os.path.join(path, i)
-    #     print (path_save)
-    #     img = cv2.imread(img_path)cl
-    #     bboxes, polys, score_text = text_detect_CRAFT(img, CRAFT_CONFIG, NET_CRAFT, PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX,  PIPELINE_CFG.EXPAND_FOR_BBOX)
-    #     for i in bboxes:
-    #         cv2.rectangle(img, (int (i[0][0]), int(i[0][1])), (int (i[2][0]), int(i[2][1])), (0,255,255), 1)
-    #     cv2.imwrite(path_save, img)
+def parse_args():
     
-    source = './evaluate_khang'
-    for i in os.listdir(source):
-        if (i.endswith('.jpg')):
-            print (i)
-            img_path = os.path.join(source, i)
-            img = cv2.imread(img_path)
-            img = LP_regconition(cfg, img, YOLO_NET, img_path)
-            # cv2.imshow('image', img)
-            # cv2.waitKey()
-            # cv2.destroyAllWindows()
-            cv2.imwrite(os.path.join('result', i), img)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--run_on_folder', type=bool, default=False,
+                        help='Wheter or not run on folder')
+    parser.add_argument("-i", "--image_path", type=str,
+                        help='Path to image')
+    parser.add_argument("--folder_path", type=str, default='./data',
+                        help='Path to folder')
+    parser.add_argument('--save_image_folder', type=str, default='./visualize_output',
+                        help='Path to save visualize image')
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    
+    if os.path.exists(args.save_image_folder == False):
+        print("Not found save folder, create one with name {}".format(args.save_image_folder))
+        os.mkdir(args.save_image_folder)
+
+    if (args.run_on_folder == True):
+        for i in os.listdir(args.folder_path):
+            if (i.endswith('.jpg')):
+                img_path = os.path.join(args.folder_path, i)
+                img = cv2.imread(img_path)
+                img = LP_regconition(cfg, img, YOLO_NET, img_path)
+                cv2.imwrite(os.path.join('result', i), img)
+    else:
+        img = cv2.imread(args.image_name)
+        img = LP_regconition(cfg, img, YOLO_NET, img_path)
+        cv2.imwrite(os.path.join('result', i), img)
+
             
-
-
-    # img = cv2.imread('un.png')    
-    # bboxes, polys, score_text = text_detect_CRAFT(img, CRAFT_CONFIG, NET_CRAFT, PIPELINE_CFG.Y_DIST_FOR_MERGE_BBOX,  PIPELINE_CFG.EXPAND_FOR_BBOX)
-    # print ('bboxes: ', len(bboxes))
-    # for i in bboxes:
-    #     print (i)
-    #     cv2.rectangle(img, (int (i[0][0]), int(i[0][1])), (int (i[2][0]), int(i[2][1])), (255,0,0), 1)
-    # cv2.imwrite('Khang.jpg', img)
-    # cv2.imshow('image', img)
-    # cv2.waitKey(0)
-
-#    text = text_recog (cfg, './result/LP.jpg', DEEPTEXT_MODEL, DEEPTEXT_PREDICTION, DEEPTEXT_CONVERTER)
-
